@@ -1,4 +1,4 @@
-datasets=("wikihow")
+datasets=("SemEval2017" "DUC2001" "nus" "wikihow")
 std_scaling=0.1
 att_weight=0.9
 layers=(9)  
