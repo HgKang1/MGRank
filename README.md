@@ -31,6 +31,16 @@ You need to modify the Hugging Face model source code to enable custom attention
  modeling_t5_2.py
 
 ## Running
+1. To run MGRank, use the provided run_{model}.sh shell script.
+2. The key parameters (std_scaling and att_weight for each dataset) can be modified in main_{model}.py via the DATASET_PARAM_MAP dictionary.
+```python
+DATASET_PARAM_MAP = {
+    "SemEval2017": {"std_scaling": 0.1, "att_weight": 0.1},
+    "DUC2001":     {"std_scaling": 0.1, "att_weight": 0.9},
+    "nus":         {"std_scaling": 1, "att_weight": 0.1},
+    "wikihow":     {"std_scaling": 0.7, "att_weight": 1.0}
+}
+```
 
 ## File Structure
 att_data_t5.py: Calculates self-attention scores and finds top-k similar words
