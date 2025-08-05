@@ -6,19 +6,18 @@ import os
 import pandas as pd
 import ast
 from torch.utils.data import Dataset
-from transformers import T5Tokenizer
-from transformers import T5TokenizerFast
 from transformers import AutoTokenizer
 import nltk
 from nltk.corpus import stopwords
-from att_data_t5 import get_self_att_score, get_sim_cand_idx
 from stanfordcorenlp import StanfordCoreNLP
 from tqdm import tqdm
-
+from transformers import T5TokenizerFast, T5EncoderModel
+from transformers import GemmaTokenizer, GemmaTokenizerFast
+from att_data_gemma2 import get_self_att_score, get_sim_cand_idx
 MAX_LEN = None
+
 # update the CoreNLP path
 StanfordCoreNLP_path = 'stanford-corenlp-full-2018-02-27'
-
 stopword_dict = set(stopwords.words('english'))
 en_model = StanfordCoreNLP(StanfordCoreNLP_path, quiet=True)
 tokenizer = None
@@ -58,6 +57,8 @@ def extract_candidates(tokens_tagged, no_subset=False):
 
         else:
             count += 1
+        
+   
     
     return keyphrase_candidate
 
@@ -83,6 +84,16 @@ class InputTextObj:
                 self.tokens_tagged[i] = (token, "IN")
         self.keyphrase_candidate = extract_candidates(self.tokens_tagged, en_model)
         
+class DocBatchDataset(Dataset):
+    def __init__(self, all_docs_pairs):
+        self.all_docs_pairs = all_docs_pairs  # List of List of doc_pairs
+
+    def __len__(self):
+        return len(self.all_docs_pairs)  # 문서 수
+
+    def __getitem__(self, idx):
+        return self.all_docs_pairs[idx]         
+     
 class KPE_Dataset(Dataset):
     def __init__(self, docs_pairs):
 
@@ -97,10 +108,9 @@ class KPE_Dataset(Dataset):
         doc_pair = self.docs_pairs[idx]
         en_input_ids = doc_pair[0][0]
         en_input_mask = doc_pair[1][0]
-        de_input_ids = doc_pair[2][0]
-        dic = doc_pair[3]
+        dic = doc_pair[2]
 
-        return [en_input_ids, en_input_mask, de_input_ids, dic]
+        return [en_input_ids, en_input_mask, dic]
     
 def clean_text(text="",database="Inspec"):
 
@@ -159,25 +169,21 @@ def clean_text(text="",database="Inspec"):
 
 
 def extract_candidate_position(doc, candidates):
-    """
-    Extract token positions for candidate words in the document.
-    """
     tokenized = tokenizer_fast(doc, return_offsets_mapping=True, return_tensors="pt")
     input_ids = tokenized["input_ids"][0]
     offsets = tokenized["offset_mapping"][0].tolist()
-
+    tokens = tokenizer_fast.convert_ids_to_tokens(input_ids.tolist())
 
     words = [item[0] for item in candidates]
     word_to_token_indices = {}
     candidate_idx = []
 
     used_char_positions = set()
-    last_used_token_end_idx = -1 
+    last_used_token_end_idx = -1
     for word in words:
         word_lower = word.lower().strip()
         doc_lower = doc.lower()
 
-    
         matches = list(re.finditer(re.escape(word_lower), doc_lower))
         matched = False
 
@@ -200,7 +206,6 @@ def extract_candidate_position(doc, candidates):
                 if token_start < end_char <= token_end:
                     token_end_idx = idx
                     break
-
             if token_start_idx is None or token_end_idx is None:
                 for idx, (token_start, token_end) in enumerate(offsets):
                     if token_start <= start_char and token_start_idx is None:
@@ -211,13 +216,13 @@ def extract_candidate_position(doc, candidates):
 
             if token_start_idx is not None and token_end_idx is not None:
                 if token_start_idx <= last_used_token_end_idx:
-                    continue  
+                    continue 
 
                 if word not in word_to_token_indices:
                     word_to_token_indices[word] = []
                 word_to_token_indices[word].append([token_start_idx, token_end_idx])
                 candidate_idx.append([word, (token_start_idx, token_end_idx)])
-                last_used_token_end_idx = token_end_idx  
+                last_used_token_end_idx = token_end_idx 
                 matched = True
                 break
 
@@ -249,6 +254,7 @@ def get_long_data(file_path="data/nus/nus_test.json"):
             except:
                 raise ValueError
     return data,labels
+
 
 def get_duc2001_data(file_path="data/DUC2001"):
     pattern = re.compile(r'<TEXT>(.*?)</TEXT>', re.S)
@@ -339,60 +345,55 @@ def remove (text):
 def generate_doc_pairs(doc, candidates, idx):
     count = 0
     doc_pairs = []
-    
-    en_input =  tokenizer(doc, max_length=MAX_LEN, padding="max_length", truncation=True, return_tensors="pt")
-    en_input_ids = en_input["input_ids"]
-    en_input_mask = en_input["attention_mask"]
-
+    doc_prompt = f"Text: {doc}"
+    # prompt = task_prompt + " " + doc_prompt
+    prompt = doc_prompt
     for id, can_and_pos in enumerate(candidates):
         candidate = can_and_pos[0]
-    
-        de_input = temp_de1 + candidate + " ." 
-        de_input_ids = tokenizer(de_input, max_length=30, padding="max_length", truncation=True, return_tensors="pt")["input_ids"]
-        de_input_ids[0, 0] = 0
-        de_input_len = (de_input_ids[0] == tokenizer.eos_token_id).nonzero()[0].item() - 2
+        target_temp = "Answer: This text mainly talks about "
+        target = f"Answer: This text mainly talks about {candidate}."
+        full_input = prompt + " " + target 
+        input_ids = tokenizer(full_input, max_length=782, padding="max_length", truncation=True, return_tensors="pt")['input_ids']
+        input_mask = tokenizer(full_input, max_length=782, padding="max_length", truncation=True, return_tensors="pt")['attention_mask']
         
-        candidate_ids = tokenizer(candidate,truncation=True, return_tensors="pt")["input_ids"][0].tolist()
-        candidate_ids = candidate_ids[:-1]
-        temp_de= temp_de1 + candidate + " ."  
-        template_len = tokenizer(temp_de, return_tensors="pt")["input_ids"].shape[1] - 3 
+        target_temp_ids = tokenizer(target_temp, return_tensors="pt")['input_ids'][0]
+        target_temp_len = target_temp_ids.size(0)
+        target_ids = tokenizer(target, return_tensors="pt")['input_ids'][0]
+        target_len = target_ids.size(0)  
+        non_pad_len = (input_ids != tokenizer.pad_token_id).sum().item() 
+        context_len = non_pad_len - target_len            
+        start_idx = context_len + target_temp_len -1          
+        candidate_len= target_len - target_temp_len
 
-        candidate_position = None
-
-
-        dic = {"template_len":template_len, "de_input_len":de_input_len, "candidate":candidate, "idx":idx, 
-               "pos":can_and_pos[1][0],"t5_pos_s":can_and_pos[2][0], "t5_pos_e":can_and_pos[2][1], "att_score": can_and_pos[3],
-                "length": can_and_pos[4], "sim_word_idx": can_and_pos[5], "whole_att_score": can_and_pos[6]} 
+        dic = {"start_idx":start_idx, "candidate":candidate, "idx":idx, "candidate_len":candidate_len, "temp_start_idx": context_len + 1,
+               "pos":can_and_pos[1][0],"t5_pos_s":can_and_pos[2][0], "t5_pos_e":can_and_pos[2][1],"att_score": can_and_pos[3],"sim_word_idx": can_and_pos[5],"whole_att_score": can_and_pos[6],
+                } 
         
-        doc_pairs.append([en_input_ids, en_input_mask, de_input_ids, dic])
-        # print(tokenizer.decode(en_input_ids[0]))
-        # print(tokenizer.decode(de_input_ids[0]))
-        # print(candidate)
-        # print(de_input_len)
+        doc_pairs.append([input_ids, input_mask, dic])
 
     return doc_pairs, count
-        
+
+  
 
 def init(setting_dict):
     '''
     Init template, max length and tokenizer.
     '''
 
-    global MAX_LEN, temp_en1, temp_de1, tokenizer, tokenizer_fast
+    global MAX_LEN, tokenizer, tokenizer_fast
     MAX_LEN = setting_dict["max_len"]
-    temp_en1 = "Book:"
-    temp_de1 = "This book mainly talks about "
 
+    tokenizer = GemmaTokenizer.from_pretrained("google/gemma-2-9b")
+    tokenizer_fast = GemmaTokenizerFast.from_pretrained("google/gemma-2-9b")
+    
 
-    tokenizer = T5Tokenizer.from_pretrained("t5-" + setting_dict["model"], model_max_length=MAX_LEN)
-    tokenizer_fast = T5TokenizerFast.from_pretrained("t5-base", model_max_length=MAX_LEN)
-
-def data_process(setting_dict, dataset_dir, dataset_name, window,layer, model, device):
+def data_process(setting_dict, dataset_dir, dataset_name,window, att_layer, model, device):
     '''
     Core API in data.py which returns the dataset
     '''
     global text_obj
     init(setting_dict)
+    
 
     if dataset_name =="SemEval2017":
         data, referneces = get_semeval2017_data(dataset_dir + "/docsutf8", dataset_dir + "/keys")
@@ -404,7 +405,6 @@ def data_process(setting_dict, dataset_dir, dataset_name, window,layer, model, d
         data, referneces = get_wikihow_data(dataset_dir + "/wikihow.csv")
     else:
         raise ValueError(f"Unsupported dataset_name: {dataset_name}. Please check --dataset_name argument.")
-
     
     docs_pairs = []
     doc_list = []
@@ -416,9 +416,12 @@ def data_process(setting_dict, dataset_dir, dataset_name, window,layer, model, d
     t_n = 0
     candidate_num = 0
     porter = nltk.PorterStemmer()
+    tokenizer_t5 = T5TokenizerFast.from_pretrained("t5-base")
+    model_t5 = T5EncoderModel.from_pretrained("t5-base").to(device)
 
     for idx, (key, doc) in enumerate(data.items()):
-        # Get stemmed labels and document segments
+        # if idx >= 10:  # Stop after processing 5 documents
+        #     break
         labels.append([ref.replace(" \n", "") for ref in referneces[key]])
         labels_s = []
         for l in referneces[key]:
@@ -444,13 +447,11 @@ def data_process(setting_dict, dataset_dir, dataset_name, window,layer, model, d
             candidates.append([can.lower(), pos])
         candidate_num += len(candidates)
         candidates=[candidate for candidate in candidates if not remove(candidate[0])]
-        
-        # get self-attn based score 
-        att_candidates= get_self_att_score(doc, candidates, window, layer, model, tokenizer, tokenizer_fast, device)  
-        
-        doc = temp_en1 + "\"" + doc + "\"" 
+        att_candidates= get_self_att_score(doc, candidates, window, model, tokenizer, tokenizer_fast, device, att_layer)
+        docs_att_candidates.append(att_candidates)
         # extract candidate position 
-        word_to_token_indices, candidates_idx = extract_candidate_position(doc,candidates)
+        doc_prompt = f"Text: {doc}"
+        word_to_token_indices, candidates_idx = extract_candidate_position(doc_prompt,candidates)
         if len(candidates) != len(candidates_idx):
             print('document idx that does not match the number of candidate and t5 tokenization candidate')
             print(idx)
@@ -465,25 +466,26 @@ def data_process(setting_dict, dataset_dir, dataset_name, window,layer, model, d
                 i+=1
             else:
                 candidates[j].append(candidates_idx[i][1])
-
-        # get_semantic_similar_candidates
-        cand_sim_group = get_sim_cand_idx(doc, candidates, model, tokenizer, tokenizer_fast, device)
-    
+        
+        k=0
+       
+        cand_sim_group = get_sim_cand_idx(doc_prompt, candidates, tokenizer_t5, model_t5, device)
+   
         for i in range(len(candidates)):
-            candidates[i].append(att_candidates[i][1])
-            candidates[i].append(att_candidates[i][2])      
-            candidates[i].append(cand_sim_group[i][1])  
-            if len(att_candidates[i]) > 5:
-                candidates[i].append(att_candidates[i][5])
-            else:
-                candidates[i].append(att_candidates[i][1]) 
+            idx_new = i if i < len(att_candidates) else len(att_candidates) - 1
 
+            candidates[i].append(att_candidates[idx_new][1])
+            candidates[i].append(att_candidates[idx_new][2])      
+            candidates[i].append(cand_sim_group[i][1])  
+            if len(att_candidates[idx_new]) > 5:
+                candidates[i].append(att_candidates[idx_new][5])
+            else:
+                candidates[i].append(att_candidates[idx_new][1]) 
+   
         doc_pairs, count = generate_doc_pairs(doc, candidates, idx)
         docs_pairs.extend(doc_pairs)
         t_n += count
         docs_candidates.append(candidates)
-        docs_att_candidates.append(att_candidates)
-        candidates_embedding.append(cand_sim_group)
 
     print("candidate_num: ", candidate_num)
     dataset = KPE_Dataset(docs_pairs)
@@ -491,6 +493,5 @@ def data_process(setting_dict, dataset_dir, dataset_name, window,layer, model, d
 
     en_model.close()
     return dataset, doc_list, labels, labels_stemed
-
 
 
