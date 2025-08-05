@@ -3,6 +3,13 @@
 This is the code for our paper **MGRank**.
 
 ---
+## Environment Setup
+- pandas: 2.2.3
+- numpy: 1.26.4
+- torch: 2.5.1+cu121
+- nltk: 3.9.1
+- transformers: 4.48.0
+- stanfordcorenlp: 3.9.1.1  
 
 ## Requirements
 
