@@ -44,15 +44,17 @@ DATASET_PARAM_MAP = {
 ```
 
 ## File Structure
-- att_data_t5.py: Calculates self-attention scores and finds top-k similar words
+- att_data.py: Calculates self-attention scores and finds top-k similar words
 
-- data_t5.py: Data loading and preprocessing pipeline
+- data.py: Data loading and preprocessing pipeline
 
-- inference_t5.py: Model inference and keyphrase selection
+- inference.py: Model inference and keyphrase selection
 
-- main_ori.py: Main execution script
+- main.py: Main execution script
 
-- test_transformers/: Modified T5 model architecture
+- run.sh: Shell script for easy batch execution of experiments with different parameter settings and datasets.
+
+- modeling_t5_mgrank.py: Modified version of Hugging Face’s modeling_{model}.py
 
 ### Custom Model Files
 
