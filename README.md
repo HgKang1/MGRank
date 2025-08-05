@@ -1,6 +1,6 @@
 # MGRank
 
-This is the official code for our paper **MGRank**.
+This is the code for our paper **MGRank**.
 
 ---
 
