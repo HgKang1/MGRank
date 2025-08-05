@@ -48,12 +48,12 @@ DATASET_PARAM_MAP = {
 ```
 
 ## File Structure
-att_data_t5.py: Calculates self-attention scores and finds top-k similar words
+- att_data_t5.py: Calculates self-attention scores and finds top-k similar words
 
-data_t5.py: Data loading and preprocessing pipeline
+- data_t5.py: Data loading and preprocessing pipeline
 
-inference_t5.py: Model inference and keyphrase selection
+- inference_t5.py: Model inference and keyphrase selection
 
-main_ori.py: Main execution script
+- main_ori.py: Main execution script
 
-test_transformers/: Modified T5 model architecture
+- test_transformers/: Modified T5 model architecture
