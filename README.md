@@ -62,6 +62,6 @@ DATASET_PARAM_MAP = {
 
 This repository includes a **modified version** of Hugging Face’s `modeling_t5.py` (and optionally `modeling_gemma2.py`) for custom attention mechanisms required by MGRank.
 
-- The file(s) `modeling_{model}_MGRank.py` are **derivative works** of Hugging Face [transformers v4.48.0](https://github.com/huggingface/transformers).
+- The file(s) `modeling_{model}_MGRank.py` are **derivative works** of Hugging Face [transformers](https://github.com/huggingface/transformers).
 - These files are distributed under the original [Apache 2.0 License](https://github.com/huggingface/transformers/blob/main/LICENSE).
 - Please **replace** the corresponding files in your local `transformers` installation or set your model path to use these custom files.
