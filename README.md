@@ -16,21 +16,15 @@ StanfordCoreNLP_path = 'your/path/to/stanford-corenlp-full-2018-02-27'
 ```
 ### 2. Modify T5 and Gemma2 Model Architecture
 You need to modify the Hugging Face model source code to enable custom attention mechanisms.
-1. Clone the Hugging Face transformers repository:
-
-    ```bash
-    git clone https://github.com/huggingface/transformers
-    ```
-
-2. Clone the Hugging Face transformers repository inside the main MGRank directory:
+1. Clone the Hugging Face transformers repository inside the main MGRank directory:
 
    ```bash
    cd MGRank
    git clone https://github.com/huggingface/transformers.git
 
-3. Replace the original `modeling_t5.py` (or `modeling_gemma2.py`) in the `transformers/src/transformers/models/t5/` directory with the modified version provided in this repository (`modeling_t5_2.py`).
+2. Replace the original `modeling_t5.py` (or `modeling_gemma2.py`) in the `transformers/src/transformers/models/t5/` directory with the modified version provided in this repository (`modeling_t5_2.py`).
 
-4. Replace the original model files (e.g., modeling_t5.py or modeling_gemma2.py) with the modified versions provided in this repository (e.g., modeling_t5_2.py).
+3. Replace the original model files (e.g., modeling_t5.py or modeling_gemma2.py) with the modified versions provided in this repository (e.g., modeling_t5_2.py).
    Use the file provided in this repo:
  modeling_t5_2.py
 
