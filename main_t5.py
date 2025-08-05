@@ -5,7 +5,7 @@ from inference_t5 import keyphrases_selection
 from torch.utils.data import DataLoader
 
 # fix the path to the T5ForConditionalGeneration model
-# from test_transformers.src.test2_transformers.models.t5.modeling_t5 import T5ForConditionalGeneration
+# from test_transformers.src.test2_transformers.models.t5.modeling_t5_MGRank import T5ForConditionalGeneration
 
 
 DATASET_PARAM_MAP = {
