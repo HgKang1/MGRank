@@ -15,7 +15,8 @@ This is the code for our paper **MGRank**.
 
 ### 1. Stanford CoreNLP Setup
 
-Download [Stanford CoreNLP](https://stanfordnlp.github.io/CoreNLP/) from the official website.  
+Download [Stanford CoreNLP](https://stanfordnlp.github.io/CoreNLP/) from the official website and place it in the main folder of MGRank.   
+
 Then **update the CoreNLP path** in both `data.py` and `att_data.py`:
 
 ```python
@@ -54,7 +55,7 @@ DATASET_PARAM_MAP = {
 
 - run.sh: Shell script for easy batch execution of experiments with different parameter settings and datasets.
 
-- modeling_t5_mgrank.py: Modified version of Hugging Face’s modeling_{model}.py
+- modeling_{model}_MGRank.py: Modified version of Hugging Face’s modeling_{model}.py
 
 ### Custom Model Files
 
