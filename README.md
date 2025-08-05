@@ -29,11 +29,7 @@ You need to modify the Hugging Face model source code to enable custom attention
    cd MGRank
    git clone https://github.com/huggingface/transformers.git
 
-2. Replace the original `modeling_t5.py` (or `modeling_gemma2.py`) in the `transformers/src/transformers/models/t5/` directory with the modified version provided in this repository (`modeling_t5_2.py`).
-
-3. Replace the original model files (e.g., modeling_t5.py or modeling_gemma2.py) with the modified versions provided in this repository (e.g., modeling_t5_2.py).
-   Use the file provided in this repo:
- modeling_t5_2.py
+2. Replace the original `modeling_t5.py` (or `modeling_gemma2.py`) in the `transformers/src/transformers/models/t5/` directory with the modified version provided in this repository (`modeling_t5_MGRank.py`).
 
 ## Running
 1. To run MGRank, use the provided run_{model}.sh shell script.
