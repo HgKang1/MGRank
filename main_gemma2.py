@@ -12,7 +12,7 @@ from transformers import GemmaTokenizer
 from transformers import Gemma2ForCausalLM
 
 # fix the path to the Gemma2ForCausalLM_our model
-# from test_transformers.src.test2_transformers.models.gemma2.modeling_gemma2_normal import Gemma2ForCausalLM_our
+# from test_transformers.src.test2_transformers.models.gemma2.modeling_gemma2_MGRank import Gemma2ForCausalLM_our
 
 
 DATASET_PARAM_MAP = {
