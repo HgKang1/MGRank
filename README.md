@@ -64,3 +64,8 @@ This repository includes a **modified version** of Hugging Face’s `modeling_t5
 - The file(s) `modeling_{model}_MGRank.py` are **derivative works** of Hugging Face [transformers](https://github.com/huggingface/transformers).
 - These files are distributed under the original [Apache 2.0 License](https://github.com/huggingface/transformers/blob/main/LICENSE).
 - Please **replace** the corresponding files in your local `transformers` installation or set your model path to use these custom files.
+
+### Implementation Note
+Parts of the codebase were adapted from [PromptRank](https://github.com/NKU-HLT/PromptRank.git), with modifications to support the candidate-aware weighting and global-local SAM scoring mechanisms introduced in MGRank.
+
+
