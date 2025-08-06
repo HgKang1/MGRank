@@ -15,7 +15,7 @@ This is the code for our paper **MGRank**.
 
 ### 1. Stanford CoreNLP Setup
 
-Download [Stanford CoreNLP](https://stanfordnlp.github.io/CoreNLP/) from the official website and place it in the main folder of MGRank.   
+Download [Stanford CoreNLP](https://stanfordnlp.github.io/CoreNLP/history.html) from the official website and place it in the main folder of MGRank.   
 
 Then **update the CoreNLP path** in both `data.py` and `att_data.py`:
 
